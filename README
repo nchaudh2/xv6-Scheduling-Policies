@@ -1,3 +1,62 @@
+PART I: system call that shuts down the machine
+
+The original xv6 system doesn't have a \shutdown" command to
+properly turn off the emulated machine. In the baseline code, a new file named shutdown.c
+implements the user space command shutdown. The missing parts for the shutdown command
+(and thus my work for this part) are the implementation of the system call that can shut down
+the machine and the corresponding system call user-level wrapper function, which is called by the
+shutdown command program (i.e., shutdown.c).
+
+
+PART II: race condition after fork()
+
+After a fork(), either the parent process or the child process can be
+scheduled to run first. Some OSes schedule the parent to run first most often, while others allow
+the child to run first mostly. The xv6 OS by default schedules the parents to run
+First after fork()s mostly. In this part, I have changed this race condition to allow the child
+process to run first mostly after a fork().
+
+
+PART III: proportional-share process scheduler - stride scheduling
+
+The default scheduler of xv6 adopts a round-robin (RR) policy. In this part, I have implemented 
+a simple stride scheduling policy.
+
+The stride scheduling policy:
+The whole system has 100 tickets in total (i.e., STRIDE TOTAL TICKETS = 100).
+Whenever a new process is added to or an existing process removed from the system, the
+100 tickets are evenly assigned to all active processes (i.e., RUNNABLE and RUNNING
+processes). Formally, when a new process is added to or an existing process is removed from
+the system, the tickets of each active process p (ticketp) is calculated as
+ticketp = b
+STRIDE TOTAL TICKETS
+N
+c (1)
+where N is the number of active processes. At the same time, the pass values of all the
+active processes should be reset (e.g., to 0).
+For example, if there is only one active process (pA), pA should have all the 100 tickets.
+When a new process (pB) is added to the system, pA and pB should have 50 tickets each.
+Another example is that, if there are four active processes (pA, pB, pC, pD) and pA exits,
+then the 100 tickets should be evenly redistributed to the remaining three active processes.
+In this case, pB, pC, and pD should have 33 tickets each.
+The stride value of each process p (stridep) is calculated as
+stridep = b
+STRIDE TOTAL TICKETS
+ticketp
+c (2)
+where ticketp is the number of tickets that p has.
+At the time the scheduler needs to make a scheduling decision, the active process with the
+lowest pass value gets scheduled (refer to our course material for the details of the stride
+scheduling algorithm).
+If there are multiple processes with the same smallest pass value, the one with the smallest
+pid gets scheduled.
+A process cannot increase its own tickets. But it can transfer its own tickets to another
+process
+
+
+something about xv6:
+
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern x86-based multiprocessor using ANSI C.
